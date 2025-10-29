@@ -166,7 +166,7 @@ val TokenQuery.isSupported: Boolean
             tokenType is TokenType.Native
         }
         is BlockchainType.Unsupported -> {
-            if ((this as BlockchainType.Unsupported).uid == "oxyra") {
+            if (blockchainType.uid == "oxyra") {
                 tokenType is TokenType.Native
             } else {
                 false
@@ -246,7 +246,13 @@ private val blockchainOrderMap: Map<BlockchainType, Int> by lazy {
 }
 
 val BlockchainType.order: Int
-    get() = blockchainOrderMap[this] ?: Int.MAX_VALUE
+    get() {
+        // Oxyra should always be at the top of the list
+        if (this is BlockchainType.Unsupported && this.uid == "oxyra") {
+            return -1
+        }
+        return blockchainOrderMap[this] ?: Int.MAX_VALUE
+    }
 
 val BlockchainType.tokenIconPlaceholder: Int
     get() = when (this) {

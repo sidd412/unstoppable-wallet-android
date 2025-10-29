@@ -82,7 +82,29 @@ class MarketKitWrapper(
         return marketKitToken ?: customToken
     }
 
-    fun tokens(queries: List<TokenQuery>) = marketKit.tokens(queries)
+    fun tokens(queries: List<TokenQuery>): List<io.horizontalsystems.marketkit.models.Token> {
+        val marketKitTokens = marketKit.tokens(queries).toMutableList()
+        
+        // Add custom Oxyra tokens if missing
+        queries.forEach { query ->
+            if (query.blockchainType is BlockchainType.Unsupported && query.blockchainType.uid == "oxyra") {
+                // Check if token already exists
+                val exists = marketKitTokens.any { 
+                    it.tokenQuery == query || 
+                    (it.coin.uid == "oxyrax" && it.blockchainType.uid == "oxyra")
+                }
+                
+                if (!exists) {
+                    val customToken = createCustomToken(query)
+                    if (customToken != null) {
+                        marketKitTokens.add(customToken)
+                    }
+                }
+            }
+        }
+        
+        return marketKitTokens
+    }
 
     fun tokens(reference: String) = marketKit.tokens(reference)
 
@@ -179,8 +201,8 @@ class MarketKitWrapper(
             }
         }
         
-        // Handle other coins (excluding custom coins and oxyrax)
-        val coinUidsNoCustom = coinUids.filterNot { it.isCustomCoin || it == "oxyrax" }
+        // Handle other coins (excluding custom coins)
+        val coinUidsNoCustom = coinUids.filterNot { it.isCustomCoin }
         if (coinUidsNoCustom.isNotEmpty()) {
             result.putAll(marketKit.coinPriceMap(coinUidsNoCustom, currencyCode))
         }
@@ -207,7 +229,7 @@ class MarketKitWrapper(
 
     fun coinPriceMapObservable(tag: String, coinUids: List<String>, currencyCode: String): Observable<Map<String, CoinPrice>> {
         val oxyraIncluded = coinUids.contains("oxyrax")
-        val coinUidsNoCustom = coinUids.filterNot { it.isCustomCoin || it == "oxyrax" }
+        val coinUidsNoCustom = coinUids.filterNot { it.isCustomCoin }
         
         return if (coinUidsNoCustom.isEmpty()) {
             if (oxyraIncluded) {

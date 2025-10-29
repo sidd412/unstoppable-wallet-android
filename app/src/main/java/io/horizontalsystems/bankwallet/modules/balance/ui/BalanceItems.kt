@@ -680,20 +680,34 @@ fun BalanceSortingSelector(
         variant = ButtonVariant.Secondary,
         title = stringResource(sortType.getTitleRes()),
         onClick = {
-            showSortTypeSelectorDialog = true
+            try {
+                showSortTypeSelectorDialog = true
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     )
 
-    if (showSortTypeSelectorDialog) {
+    if (showSortTypeSelectorDialog && sortTypes.isNotEmpty()) {
         MenuGroup(
             title = stringResource(R.string.Balance_Sort_PopupTitle),
             items = sortTypes.map {
                 MenuItemX(stringResource(it.getTitleRes()), it == sortType, it)
             },
             onDismissRequest = {
-                showSortTypeSelectorDialog = false
+                try {
+                    showSortTypeSelectorDialog = false
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
             },
-            onSelectItem = onSelectSortType
+            onSelectItem = { selectedType ->
+                try {
+                    onSelectSortType(selectedType)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
         )
     }
 }
