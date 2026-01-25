@@ -251,6 +251,10 @@ val AccountType.statAccountType: String
             "monero_watch_account"
         }
 
+        is AccountType.OxyraWatchAccount -> {
+            "oxyra_watch_account"
+        }
+
         is AccountType.HdExtendedKey -> {
             if (hdExtendedKey.isPublic) {
                 "account_x_pub_key"

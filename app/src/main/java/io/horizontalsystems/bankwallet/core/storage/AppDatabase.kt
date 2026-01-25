@@ -52,7 +52,9 @@ import io.horizontalsystems.bankwallet.entities.EvmMethodLabel
 import io.horizontalsystems.bankwallet.entities.EvmSyncSourceRecord
 import io.horizontalsystems.bankwallet.entities.LogEntry
 import io.horizontalsystems.bankwallet.entities.MoneroNodeRecord
+import io.horizontalsystems.bankwallet.entities.OxyraNodeRecord
 import io.horizontalsystems.bankwallet.entities.RecentAddress
+import io.horizontalsystems.bankwallet.core.storage.OxyraNodeDao
 import io.horizontalsystems.bankwallet.entities.RestoreSettingRecord
 import io.horizontalsystems.bankwallet.entities.SpamAddress
 import io.horizontalsystems.bankwallet.entities.SpamScanState
@@ -72,7 +74,7 @@ import io.horizontalsystems.bankwallet.modules.profeatures.storage.ProFeaturesSe
 import io.horizontalsystems.bankwallet.modules.walletconnect.storage.WCSessionDao
 import io.horizontalsystems.bankwallet.modules.walletconnect.storage.WalletConnectV2Session
 
-@Database(version = 69, exportSchema = false, entities = [
+@Database(version = 70, exportSchema = false, entities = [
     EnabledWallet::class,
     EnabledWalletCache::class,
     AccountRecord::class,
@@ -98,7 +100,8 @@ import io.horizontalsystems.bankwallet.modules.walletconnect.storage.WalletConne
     SpamAddress::class,
     SpamScanState::class,
     RecentAddress::class,
-    MoneroNodeRecord::class
+    MoneroNodeRecord::class,
+    OxyraNodeRecord::class
 ])
 
 @TypeConverters(DatabaseConverters::class)
@@ -125,6 +128,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun spamAddressDao(): SpamAddressDao
     abstract fun recentAddressDao(): RecentAddressDao
     abstract fun moneroNodeDao(): MoneroNodeDao
+    abstract fun oxyraNodeDao(): OxyraNodeDao
 
     companion object {
 
@@ -139,7 +143,7 @@ abstract class AppDatabase : RoomDatabase() {
 
         private fun buildDatabase(context: Context): AppDatabase {
             return Room.databaseBuilder(context, AppDatabase::class.java, "dbBankWallet")
-//                    .fallbackToDestructiveMigration()
+                    .fallbackToDestructiveMigration()
                     .allowMainThreadQueries()
                     .addMigrations(
                             Migration_31_32,

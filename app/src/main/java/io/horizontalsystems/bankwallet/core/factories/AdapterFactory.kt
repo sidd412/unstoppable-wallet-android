@@ -16,7 +16,7 @@ import io.horizontalsystems.bankwallet.core.adapters.EvmAdapter
 import io.horizontalsystems.bankwallet.core.adapters.EvmTransactionsAdapter
 import io.horizontalsystems.bankwallet.core.adapters.JettonAdapter
 import io.horizontalsystems.bankwallet.core.adapters.LitecoinAdapter
-import io.horizontalsystems.bankwallet.core.adapters.MoneroAdapter
+
 import io.horizontalsystems.bankwallet.core.adapters.SolanaAdapter
 import io.horizontalsystems.bankwallet.core.adapters.SolanaTransactionConverter
 import io.horizontalsystems.bankwallet.core.adapters.SolanaTransactionsAdapter
@@ -37,6 +37,9 @@ import io.horizontalsystems.bankwallet.core.managers.EvmBlockchainManager
 import io.horizontalsystems.bankwallet.core.managers.EvmLabelManager
 import io.horizontalsystems.bankwallet.core.managers.EvmSyncSourceManager
 import io.horizontalsystems.bankwallet.core.managers.MoneroNodeManager
+import io.horizontalsystems.bankwallet.core.managers.OxyraNodeManager
+import io.horizontalsystems.bankwallet.core.adapters.OxyraAdapter
+import io.horizontalsystems.bankwallet.core.adapters.MoneroAdapter
 import io.horizontalsystems.bankwallet.core.managers.RestoreSettingsManager
 import io.horizontalsystems.bankwallet.core.managers.SolanaKitManager
 import io.horizontalsystems.bankwallet.core.managers.StellarKitManager
@@ -59,6 +62,7 @@ class AdapterFactory(
     private val tonKitManager: TonKitManager,
     private val stellarKitManager: StellarKitManager,
     private val moneroNodeManager: MoneroNodeManager,
+    private val oxyraNodeManager: OxyraNodeManager,
     private val backgroundManager: BackgroundManager,
     private val restoreSettingsManager: RestoreSettingsManager,
     private val coinManager: ICoinManager,
@@ -176,12 +180,31 @@ class AdapterFactory(
                 StellarAdapter(stellarKitManager.getStellarKitWrapper(wallet.account))
             }
             BlockchainType.Monero -> {
-                MoneroAdapter.create(
-                    context = context,
-                    wallet = wallet,
-                    restoreSettings = restoreSettingsManager.settings(wallet.account, wallet.token.blockchainType),
-                    node = moneroNodeManager.currentNode
-                )
+                Log.e("SidOxyra", "🔥🔥🔥 Factory: Request for Monero blockchain type. Token: ${wallet.token.coin.uid}")
+                if (wallet.token.coin.uid == "oxyra") {
+                    try {
+                        Log.e("SidOxyra", "🏭 Factory: Attempting to create OxyraAdapter for wallet: ${wallet.account.id}")
+                        val adapter = OxyraAdapter.create(
+                            context = context,
+                            wallet = wallet,
+                            restoreSettings = restoreSettingsManager.settings(wallet.account, wallet.token.blockchainType),
+                            node = oxyraNodeManager.currentNode
+                        )
+                        Log.e("SidOxyra", "🏭 Factory: Created OxyraAdapter SUCCESS, calling start()...")
+                        adapter.start()
+                        adapter
+                    } catch (e: Throwable) {
+                        Log.e("SidOxyra", "❌❌❌ Factory CRASH while creating OxyraAdapter", e)
+                        null
+                    }
+                } else {
+                    MoneroAdapter.create(
+                        context = context,
+                        wallet = wallet,
+                        restoreSettings = restoreSettingsManager.settings(wallet.account, wallet.token.blockchainType),
+                        node = moneroNodeManager.currentNode
+                    )
+                }
             }
 
             else -> null

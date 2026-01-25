@@ -13,7 +13,7 @@ import io.horizontalsystems.bankwallet.entities.Address
 import io.horizontalsystems.ethereumkit.core.AddressValidator
 import io.horizontalsystems.marketkit.models.Token
 import io.horizontalsystems.marketkit.models.TokenType
-import io.horizontalsystems.monerokit.MoneroKit
+import io.horizontalsystems.oxyrakit.OxyraKit
 import io.horizontalsystems.tonkit.FriendlyAddress
 
 interface EnterAddressValidator {
@@ -63,7 +63,7 @@ class StellarAddressValidator(private val token: Token) : EnterAddressValidator 
 
 class MoneroAddressValidator() : EnterAddressValidator {
     override suspend fun validate(address: Address) {
-        MoneroKit.validateAddress(address.hex)
+        OxyraKit.validateAddress(address.hex)
     }
 }
 

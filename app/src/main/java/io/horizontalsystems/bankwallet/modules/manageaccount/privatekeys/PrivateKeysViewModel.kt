@@ -17,7 +17,7 @@ import io.horizontalsystems.hdwalletkit.HDExtendedKey
 import io.horizontalsystems.hdwalletkit.HDWallet
 import io.horizontalsystems.hdwalletkit.Mnemonic
 import io.horizontalsystems.marketkit.models.BlockchainType
-import io.horizontalsystems.monerokit.MoneroKit
+import io.horizontalsystems.oxyrakit.OxyraKit
 import io.horizontalsystems.stellarkit.StellarKit
 import java.math.BigInteger
 

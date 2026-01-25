@@ -2,8 +2,8 @@ package io.horizontalsystems.bankwallet.core.managers
 
 import io.horizontalsystems.oxyrakit.OxyraKit
 
-class MoneroBirthdayProvider {
+class OxyraBirthdayProvider {
     fun restoreHeightForNewWallet(): Long {
-        return OxyraKit.restoreHeightForNewWallet()
+        return 0L
     }
 }

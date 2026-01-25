@@ -2,6 +2,7 @@ package io.horizontalsystems.bankwallet.modules.enablecoin.restoresettings
 
 import io.horizontalsystems.bankwallet.core.Clearable
 import io.horizontalsystems.bankwallet.core.managers.MoneroBirthdayProvider
+import io.horizontalsystems.bankwallet.core.managers.OxyraBirthdayProvider
 import io.horizontalsystems.bankwallet.core.managers.RestoreSettingType
 import io.horizontalsystems.bankwallet.core.managers.RestoreSettings
 import io.horizontalsystems.bankwallet.core.managers.RestoreSettingsManager
@@ -16,7 +17,8 @@ import io.reactivex.subjects.PublishSubject
 class RestoreSettingsService(
     private val manager: RestoreSettingsManager,
     private val zcashBirthdayProvider: ZcashBirthdayProvider,
-    private val moneroBirthdayProvider: MoneroBirthdayProvider
+    private val moneroBirthdayProvider: MoneroBirthdayProvider,
+    private val oxyraBirthdayProvider: OxyraBirthdayProvider
 ) : Clearable {
 
     val approveSettingsObservable = PublishSubject.create<TokenWithSettings>()
@@ -58,7 +60,14 @@ class RestoreSettingsService(
         settings.birthdayHeight = if (config.restoreAsNew) {
             when (token.blockchainType) {
                 BlockchainType.Zcash -> zcashBirthdayProvider.getLatestCheckpointBlockHeight()
-                BlockchainType.Monero -> moneroBirthdayProvider.restoreHeightForNewWallet()
+                BlockchainType.Monero -> {
+                     android.util.Log.d("SidOxyra", "RestoreSettingsService: Checking coin uid='${token.coin.uid}'")
+                     if (token.coin.uid == "oxyra") {
+                         0L // Force 0 directly
+                     } else {
+                         moneroBirthdayProvider.restoreHeightForNewWallet()
+                     }
+                }
                 else -> null
             }
         } else {

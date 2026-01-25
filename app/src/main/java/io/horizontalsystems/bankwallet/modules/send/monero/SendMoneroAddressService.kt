@@ -3,12 +3,12 @@ package io.horizontalsystems.bankwallet.modules.send.monero
 import io.horizontalsystems.bankwallet.R
 import io.horizontalsystems.bankwallet.core.providers.Translator
 import io.horizontalsystems.bankwallet.entities.Address
-import io.horizontalsystems.monerokit.MoneroKit
+import io.horizontalsystems.bankwallet.core.ISendMoneroAdapter
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
-class SendMoneroAddressService {
+class SendMoneroAddressService(private val adapter: ISendMoneroAdapter) {
     private var address: Address? = null
     private var addressError: Throwable? = null
 
@@ -34,7 +34,7 @@ class SendMoneroAddressService {
         val address = this.address ?: return
 
         try {
-            MoneroKit.validateAddress(address.hex)
+            adapter.validate(address.hex)
         } catch (_: Exception) {
             addressError = Throwable(Translator.getString(R.string.SwapSettings_Error_InvalidAddress))
         }

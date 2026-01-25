@@ -101,6 +101,7 @@ class WatchAddressService(
                         add(TokenQuery(BlockchainType.Monero, TokenType.Native))
                     }
                 }
+                is AccountType.OxyraWatchAccount -> { }
             }
         }
 

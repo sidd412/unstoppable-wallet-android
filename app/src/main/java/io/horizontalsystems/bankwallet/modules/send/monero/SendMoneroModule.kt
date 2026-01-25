@@ -32,7 +32,7 @@ object SendMoneroModule {
                 coinCode = wallet.coin.code,
                 availableBalance = adapter.balanceData.available
             )
-            val addressService = SendMoneroAddressService()
+            val addressService = SendMoneroAddressService(adapter)
             val feeService = SendMoneroFeeService(adapter)
             val xRateService = XRateService(App.marketKit, App.currencyManager.baseCurrency)
             val feeToken = App.coinManager.getToken(TokenQuery(BlockchainType.Monero, TokenType.Native)) ?: throw IllegalArgumentException()

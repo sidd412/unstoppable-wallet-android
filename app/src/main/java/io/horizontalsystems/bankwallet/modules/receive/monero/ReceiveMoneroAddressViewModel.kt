@@ -7,7 +7,7 @@ import androidx.lifecycle.viewModelScope
 import io.horizontalsystems.bankwallet.core.App
 import io.horizontalsystems.bankwallet.core.IAdapterManager
 import io.horizontalsystems.bankwallet.core.ViewModelUiState
-import io.horizontalsystems.bankwallet.core.adapters.MoneroAdapter
+import io.horizontalsystems.bankwallet.core.adapters.IMoneroAdapter
 import io.horizontalsystems.bankwallet.entities.ViewState
 import io.horizontalsystems.bankwallet.entities.Wallet
 import io.horizontalsystems.bankwallet.modules.receive.ReceiveModule
@@ -51,7 +51,7 @@ class ReceiveMoneroAddressViewModel(
 
     private suspend fun fetchAddress() {
         try {
-            val adapter = adapterManager.getAdapterForWallet<MoneroAdapter>(wallet) ?: throw ReceiveMoneroError.NoAdapter
+            val adapter = adapterManager.getAdapterForWallet<IMoneroAdapter>(wallet) ?: throw ReceiveMoneroError.NoAdapter
             mainNet = adapter.isMainNet
 
             while (adapter.receiveAddress.isEmpty()) {

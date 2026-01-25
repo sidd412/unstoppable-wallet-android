@@ -1,8 +1,8 @@
 package io.horizontalsystems.bankwallet.core.adapters
 
+import android.util.Log
 import io.horizontalsystems.bankwallet.core.AdapterState
 import io.horizontalsystems.bankwallet.core.ITransactionsAdapter
-import io.horizontalsystems.bankwallet.core.adapters.MoneroAdapter.Companion.DECIMALS
 import io.horizontalsystems.bankwallet.entities.LastBlockInfo
 import io.horizontalsystems.bankwallet.entities.Wallet
 import io.horizontalsystems.bankwallet.entities.transactionrecords.TransactionRecord
@@ -11,28 +11,30 @@ import io.horizontalsystems.bankwallet.entities.transactionrecords.bitcoin.Bitco
 import io.horizontalsystems.bankwallet.modules.transactions.FilterTransactionType
 import io.horizontalsystems.marketkit.models.Token
 import io.horizontalsystems.monerokit.MoneroKit
+import io.horizontalsystems.monerokit.SyncState
 import io.horizontalsystems.monerokit.model.TransactionInfo
-import io.horizontalsystems.monerokit.model.TransactionInfo.Direction
 import io.reactivex.Flowable
 import io.reactivex.Single
+import java.math.BigDecimal
 import kotlinx.coroutines.rx2.asFlowable
 
 class MoneroTransactionsAdapter(
     private val kit: MoneroKit,
-    private val transactionsProvider: MoneroTransactionsProvider,
-    private val wallet: Wallet,
+    private val wallet: Wallet
 ) : ITransactionsAdapter {
+
+    private val TAG = "SidOxyra"
 
     override val explorerTitle: String = "Monero Explorer"
 
     override val transactionsState: AdapterState
-        get() = kit.syncStateFlow.value.toAdapterState()
+        get() = convertToAdapterState(kit.syncStateFlow.value)
 
     override val transactionsStateUpdatedFlowable: Flowable<Unit>
         get() = kit.syncStateFlow.asFlowable().map { }
 
     override val lastBlockInfo: LastBlockInfo?
-        get() = kit.lastBlockHeight?.toInt()?.let { LastBlockInfo(it) }
+        get() = kit.lastBlockHeight?.let { LastBlockInfo(it.toInt()) }
 
     override val lastBlockUpdatedFlowable: Flowable<Unit>
         get() = kit.lastBlockUpdatedFlow.asFlowable()
@@ -44,12 +46,7 @@ class MoneroTransactionsAdapter(
         transactionType: FilterTransactionType,
         address: String?
     ): Single<List<TransactionRecord>> {
-        return transactionsProvider.getTransactions(from?.transactionHash, transactionType, address, limit)
-            .map { transactions ->
-                transactions.map {
-                    getTransactionRecord(it)
-                }
-            }
+        return Single.just(emptyList())
     }
 
     override fun getTransactionRecordsFlowable(
@@ -57,63 +54,71 @@ class MoneroTransactionsAdapter(
         transactionType: FilterTransactionType,
         address: String?
     ): Flowable<List<TransactionRecord>> {
-        return transactionsProvider.getNewTransactionsFlowable(transactionType)
-            .map { transactions ->
-                transactions.map { getTransactionRecord(it) }
-            }
+        return kit.allTransactionsFlow.asFlowable().map { transactions ->
+            transactions.map { convertTransaction(it) }
+        }
     }
 
-    override fun getTransactionUrl(transactionHash: String): String =
-        "https://blockchair.com/monero/transaction/$transactionHash"
+    override fun getTransactionUrl(transactionHash: String): String {
+        return "https://xmrchain.net/tx/$transactionHash"
+    }
+    
+    fun start() { }
+    fun stop() { }
 
-    private fun getTransactionRecord(transaction: TransactionInfo): TransactionRecord {
+    private fun convertToAdapterState(syncState: SyncState): AdapterState = when (syncState) {
+        is SyncState.Synced -> AdapterState.Synced
+        is SyncState.NotSynced -> AdapterState.NotSynced(syncState.error)
+        is SyncState.Syncing -> AdapterState.Syncing(syncState.progress?.times(100)?.toInt())
+        else -> AdapterState.NotSynced(Exception("Unknown state"))
+    }
+
+    private fun convertTransaction(transaction: TransactionInfo): TransactionRecord {
+        val amount = transaction.amount.toBigDecimal().movePointLeft(12)
+        val fee = transaction.fee.toBigDecimal().movePointLeft(12)
         val blockHeight = if (transaction.blockheight == 0L || transaction.isPending) null else transaction.blockheight.toInt()
-        return when (transaction.direction) {
-            Direction.Direction_In -> {
-                val subaddress = kit.getSubaddress(transaction.accountIndex, transaction.addressIndex)
-                BitcoinIncomingTransactionRecord(
-                    token = wallet.token,
-                    uid = transaction.hash,
-                    transactionHash = transaction.hash,
-                    transactionIndex = 0,
-                    blockHeight = blockHeight,
-                    confirmationsThreshold = TransactionInfo.CONFIRMATION,
-                    timestamp = transaction.timestamp,
-                    fee = transaction.fee.scaledDown(DECIMALS),
-                    failed = transaction.isFailed,
-                    lockInfo = null,
-                    conflictingHash = null,
-                    showRawTransaction = false,
-                    amount = transaction.amount.scaledDown(DECIMALS),
-                    from = null,
-                    to = subaddress?.address,
-                    memo = transaction.notes,
-                    source = wallet.transactionSource
-                )
-            }
 
-            Direction.Direction_Out -> {
-                BitcoinOutgoingTransactionRecord(
-                    token = wallet.token,
-                    uid = transaction.hash,
-                    transactionHash = transaction.hash,
-                    transactionIndex = 0,
-                    blockHeight = blockHeight,
-                    confirmationsThreshold = TransactionInfo.CONFIRMATION,
-                    timestamp = transaction.timestamp,
-                    fee = transaction.fee.scaledDown(DECIMALS),
-                    failed = transaction.isFailed,
-                    lockInfo = null,
-                    conflictingHash = null,
-                    showRawTransaction = false,
-                    amount = transaction.amount.scaledDown(DECIMALS).negate(),
-                    to = null,
-                    sentToSelf = false,
-                    memo = transaction.notes,
-                    source = wallet.transactionSource,
-                    replaceable = false
-                )
-            }
+        return if (transaction.direction == TransactionInfo.Direction.Direction_In) {
+            BitcoinIncomingTransactionRecord(
+                token = wallet.token,
+                uid = transaction.hash,
+                transactionHash = transaction.hash,
+                transactionIndex = 0,
+                blockHeight = blockHeight,
+                confirmationsThreshold = 10,
+                timestamp = transaction.timestamp,
+                fee = fee,
+                failed = transaction.isFailed,
+                lockInfo = null,
+                conflictingHash = null,
+                showRawTransaction = false,
+                amount = amount,
+                from = null,
+                to = null,
+                memo = transaction.notes,
+                source = wallet.transactionSource
+            )
+        } else {
+            BitcoinOutgoingTransactionRecord(
+                token = wallet.token,
+                uid = transaction.hash,
+                transactionHash = transaction.hash,
+                transactionIndex = 0,
+                blockHeight = blockHeight,
+                confirmationsThreshold = 10,
+                timestamp = transaction.timestamp,
+                fee = fee,
+                failed = transaction.isFailed,
+                lockInfo = null,
+                conflictingHash = null,
+                showRawTransaction = false,
+                amount = amount.negate(),
+                to = null,
+                sentToSelf = false,
+                memo = transaction.notes,
+                source = wallet.transactionSource,
+                replaceable = false
+            )
         }
     }
 }

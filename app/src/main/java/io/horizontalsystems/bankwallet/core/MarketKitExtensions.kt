@@ -429,6 +429,9 @@ fun BlockchainType.supports(accountType: AccountType): Boolean {
 
         is AccountType.MoneroWatchAccount ->
             this == BlockchainType.Monero
+
+        is AccountType.OxyraWatchAccount ->
+            this.uid == "oxyra"
     }
 }
 

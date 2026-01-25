@@ -118,24 +118,37 @@ class RestoreMnemonicViewModel(
     }
 
     fun onProceed() {
+        android.util.Log.d("sidOxyra", "onProceed called. Word count: ${wordItems.size}")
+        android.util.Log.d("sidOxyra", "Invalid word items count: ${invalidWordItems.size}")
+        
         when {
-            invalidWordItems.isNotEmpty() -> {
+            invalidWordItems.isNotEmpty() && wordItems.size != 25 -> {
+                android.util.Log.d("sidOxyra", "Invalid words found: ${invalidWordItems.map { it.word }.joinToString(", ")}")
                 invalidWordRanges = invalidWordItems.map { it.range }
             }
-            wordItems.size !in (Mnemonic.EntropyStrength.values().map { it.wordCount }) -> {
+            wordItems.size != 25 && wordItems.size !in (Mnemonic.EntropyStrength.values().map { it.wordCount }) -> {
+                android.util.Log.d("sidOxyra", "Invalid word count: ${wordItems.size}")
                 error = Translator.getString(R.string.Restore_Error_MnemonicWordCount, wordItems.size)
             }
             passphraseEnabled && passphrase.isBlank() -> {
+                android.util.Log.d("sidOxyra", "Empty passphrase")
                 passphraseError = Translator.getString(R.string.Restore_Error_EmptyPassphrase)
             }
             else -> {
                 try {
                     val words = wordItems.map { it.word.normalizeNFKD() }
-                    wordsManager.validateChecksumStrict(words)
+                    
+                    if (words.size != 25) {
+                        wordsManager.validateChecksumStrict(words)
+                    } else {
+                         android.util.Log.d("sidOxyra", "Skipping BIP39 checksum for 25 words (Monero/Oxyra)")
+                    }
 
                     accountType = AccountType.Mnemonic(words, passphrase.normalizeNFKD())
                     error = null
+                    android.util.Log.d("sidOxyra", "AccountType set successfully")
                 } catch (checksumException: Exception) {
+                    android.util.Log.e("sidOxyra", "Checksum failed", checksumException)
                     error = Translator.getString(R.string.Restore_InvalidChecksum)
                 }
             }

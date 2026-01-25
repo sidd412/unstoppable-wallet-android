@@ -1,5 +1,6 @@
 package io.horizontalsystems.bankwallet.core.managers
 
+import android.util.Log
 import io.horizontalsystems.bankwallet.core.IAdapter
 import io.horizontalsystems.bankwallet.core.IAdapterManager
 import io.horizontalsystems.bankwallet.core.IBalanceAdapter
@@ -27,7 +28,8 @@ class AdapterManager(
     private val tronKitManager: TronKitManager,
     private val tonKitManager: TonKitManager,
     private val stellarKitManager: StellarKitManager,
-    private val moneroNodeManager: MoneroNodeManager
+    private val moneroNodeManager: MoneroNodeManager,
+    private val oxyraNodeManager: OxyraNodeManager
 ) : IAdapterManager {
 
     private val coroutineScope = CoroutineScope(Dispatchers.Default)
@@ -63,6 +65,11 @@ class AdapterManager(
         }
         coroutineScope.launch {
             moneroNodeManager.currentNodeUpdatedFlow.collect {
+                handleUpdatedKit(BlockchainType.Monero)
+            }
+        }
+        coroutineScope.launch {
+            oxyraNodeManager.currentNodeUpdatedFlow.collect {
                 handleUpdatedKit(BlockchainType.Monero)
             }
         }
@@ -113,17 +120,23 @@ class AdapterManager(
 
     @Synchronized
     private fun initAdapters(wallets: List<Wallet>) {
+        Log.e("SidOxyra", "🔥🔥🔥 AdapterManager: initAdapters called with ${wallets.size} wallets")
         val currentAdapters = adaptersMap.toMutableMap()
         adaptersMap.clear()
 
         wallets.forEach { wallet ->
+            Log.e("SidOxyra", "🔥🔥🔥 AdapterManager: Processing wallet: ${wallet.token.coin.code} (${wallet.token.blockchainType})")
             var adapter = currentAdapters.remove(wallet)
             if (adapter == null) {
+                Log.e("SidOxyra", "🔥🔥🔥 AdapterManager: Adapter not found in cache, asking Factory...")
                 adapterFactory.getAdapterOrNull(wallet)?.let {
+                    Log.e("SidOxyra", "🔥🔥🔥 AdapterManager: Adapter created for ${wallet.token.coin.code}, calling start()")
                     it.start()
 
                     adapter = it
-                }
+                } ?: Log.e("SidOxyra", "❌❌❌ AdapterManager: Factory returned NULL and failed to create adapter for ${wallet.token.coin.code}")
+            } else {
+                 Log.e("SidOxyra", "🔥🔥🔥 AdapterManager: Found existing adapter for ${wallet.token.coin.code}")
             }
 
             adapter?.let {

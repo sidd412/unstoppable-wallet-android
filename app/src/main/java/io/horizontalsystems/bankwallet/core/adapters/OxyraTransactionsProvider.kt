@@ -1,15 +1,14 @@
 package io.horizontalsystems.bankwallet.core.adapters
 
-import android.util.Log
+import io.horizontalsystems.oxyrakit.model.TransactionInfo
 import io.horizontalsystems.bankwallet.modules.transactions.FilterTransactionType
-import io.horizontalsystems.monerokit.model.TransactionInfo
 import io.reactivex.BackpressureStrategy
 import io.reactivex.Flowable
 import io.reactivex.Single
 import io.reactivex.subjects.PublishSubject
 import kotlin.math.min
 
-class MoneroTransactionsProvider {
+class OxyraTransactionsProvider {
     private var transactions = listOf<TransactionInfo>()
     private val newTransactionsSubject = PublishSubject.create<List<TransactionInfo>>()
 
@@ -46,7 +45,6 @@ class MoneroTransactionsProvider {
         }
     }
 
-
     fun getNewTransactionsFlowable(transactionType: FilterTransactionType): Flowable<List<TransactionInfo>> {
         val filters = getFilters(transactionType)
 
@@ -75,5 +73,4 @@ class MoneroTransactionsProvider {
                 FilterTransactionType.Approve -> add { false }
             }
         }
-
 }

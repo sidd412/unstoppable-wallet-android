@@ -12,7 +12,8 @@ import io.horizontalsystems.marketkit.models.Token
 class RestoreSettingsManager(
         private val storage: IRestoreSettingsStorage,
         private val zcashBirthdayProvider: ZcashBirthdayProvider,
-        private val moneroBirthdayProvider: MoneroBirthdayProvider
+        private val moneroBirthdayProvider: MoneroBirthdayProvider,
+        private val oxyraBirthdayProvider: OxyraBirthdayProvider
 ) {
     fun settings(account: Account, blockchainType: BlockchainType): RestoreSettings {
         val records = storage.restoreSettings(account.id, blockchainType.uid)

@@ -15,7 +15,7 @@ import io.horizontalsystems.ethereumkit.core.AddressValidator
 import io.horizontalsystems.marketkit.models.BlockchainType
 import io.horizontalsystems.marketkit.models.TokenQuery
 import io.horizontalsystems.marketkit.models.TokenType
-import io.horizontalsystems.monerokit.MoneroKit
+import io.horizontalsystems.oxyrakit.OxyraKit
 import io.horizontalsystems.stellarkit.StellarKit
 import io.horizontalsystems.tonkit.core.TonKit
 import io.horizontalsystems.tronkit.account.AddressHandler
@@ -323,7 +323,7 @@ class AddressHandlerMonero : IAddressHandler {
     override fun isSupported(value: String) = try {
         val uriInfo = MoneroUriParser.parse(value)
         val address = uriInfo?.address ?: value
-        MoneroKit.validateAddress(address)
+        OxyraKit.validateAddress(address)
         true
     } catch (_: Exception) {
         false

@@ -13,8 +13,11 @@ import io.horizontalsystems.marketkit.models.HsPointTimePeriod
 import io.horizontalsystems.marketkit.models.HsTimePeriod
 import io.horizontalsystems.marketkit.models.MarketInfo
 import io.horizontalsystems.marketkit.models.NftTopCollection
+import io.horizontalsystems.marketkit.models.FullCoin
 import io.horizontalsystems.marketkit.models.Stock
+import io.horizontalsystems.marketkit.models.Token
 import io.horizontalsystems.marketkit.models.TokenQuery
+import io.horizontalsystems.marketkit.models.TokenType
 import io.horizontalsystems.marketkit.models.Vault
 import io.horizontalsystems.subscriptions.core.UserSubscriptionManager
 import io.reactivex.Observable
@@ -60,18 +63,53 @@ class MarketKitWrapper(
 
     fun topFullCoins(limit: Int = 20) = marketKit.topFullCoins(limit)
 
-    fun fullCoins(filter: String, limit: Int = 20) = marketKit.fullCoins(filter, limit)
+    private val oxyraToken by lazy {
+        Token(
+            io.horizontalsystems.marketkit.models.Coin("oxyra", "Oxyra", "OXRX"),
+            io.horizontalsystems.marketkit.models.Blockchain(BlockchainType.Monero, "Oxyra", null),
+            io.horizontalsystems.marketkit.models.TokenType.Native,
+            12
+        )
+    }
 
-    fun fullCoins(coinUids: List<String>) = marketKit.fullCoins(coinUids)
+    private val oxyraFullCoin by lazy {
+        FullCoin(oxyraToken.coin, listOf(oxyraToken))
+    }
+
+    fun fullCoins(filter: String, limit: Int = 20): List<FullCoin> {
+        val result: MutableList<FullCoin> = marketKit.fullCoins(filter, limit).toMutableList()
+        if (filter.isEmpty() || "oxyra".contains(filter.lowercase()) || "oxrx".contains(filter.lowercase())) {
+            result.add(0, oxyraFullCoin)
+        }
+        return result
+    }
+
+    fun fullCoins(coinUids: List<String>): List<FullCoin> {
+        val result: MutableList<FullCoin> = marketKit.fullCoins(coinUids).toMutableList()
+        if (coinUids.contains("oxyra")) {
+            result.add(oxyraFullCoin)
+        }
+        return result
+    }
 
     fun fullCoinsByCoinCode(coinCodes: List<String>) = marketKit.fullCoinsByCoinCodes(coinCodes)
 
-    fun allCoins() = marketKit.allCoins()
+    fun allCoins(): List<io.horizontalsystems.marketkit.models.Coin> {
+        val result = marketKit.allCoins().toMutableList()
+        result.add(oxyraToken.coin)
+        return result
+    }
 
     fun token(query: TokenQuery) = marketKit.token(query)
 
-    fun tokens(queries: List<TokenQuery>) = marketKit.tokens(queries)
-
+    fun tokens(queries: List<TokenQuery>): List<Token> {
+        val result = marketKit.tokens(queries).toMutableList()
+        if (queries.contains(TokenQuery(BlockchainType.Monero, TokenType.Native))) {
+            result.add(oxyraToken)
+        }
+        return result
+    }
+    
     fun tokens(reference: String) = marketKit.tokens(reference)
 
     fun tokens(blockchainType: BlockchainType, filter: String, limit: Int = 20) = marketKit.tokens(blockchainType, filter, limit)

@@ -451,6 +451,14 @@ interface ISendMoneroAdapter {
     val balanceData: BalanceData
     suspend fun send(amount: BigDecimal, address: String, memo: String?)
     suspend fun estimateFee(amount: BigDecimal, address: String, memo: String?) : BigDecimal
+    fun validate(address: String)
+}
+
+interface ISendOxyraAdapter {
+    val balanceData: BalanceData
+    suspend fun send(amount: BigDecimal, address: String, memo: String?)
+    suspend fun estimateFee(amount: BigDecimal, address: String, memo: String?) : BigDecimal
+    fun validate(address: String)
 }
 
 interface ISendTronAdapter {
