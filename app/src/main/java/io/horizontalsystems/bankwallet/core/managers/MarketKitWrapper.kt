@@ -19,12 +19,12 @@ import io.horizontalsystems.marketkit.models.Token
 import io.horizontalsystems.marketkit.models.TokenQuery
 import io.horizontalsystems.marketkit.models.TokenType
 import io.horizontalsystems.marketkit.models.Vault
+import java.math.BigDecimal
 import io.horizontalsystems.subscriptions.core.UserSubscriptionManager
 import io.reactivex.Observable
 import io.reactivex.Single
 import retrofit2.HttpException
 import retrofit2.Response
-import java.math.BigDecimal
 
 class MarketKitWrapper(
     context: Context,
@@ -170,25 +170,102 @@ class MarketKitWrapper(
 
     fun refreshCoinPrices(currencyCode: String) = marketKit.refreshCoinPrices(currencyCode)
 
-    fun coinPrice(coinUid: String, currencyCode: String): CoinPrice? =
-        if (coinUid.isCustomCoin) null else marketKit.coinPrice(coinUid, currencyCode)
-
-    fun coinPriceMap(coinUids: List<String>, currencyCode: String): Map<String, CoinPrice> {
-        val coinUidsNoCustom = coinUids.removeCustomCoins()
+    fun coinPrice(coinUid: String, currencyCode: String): CoinPrice? {
         return when {
-            coinUidsNoCustom.isEmpty() -> mapOf()
-            else -> marketKit.coinPriceMap(coinUidsNoCustom, currencyCode)
+            coinUid == "oxyrax" -> {
+                // Return mock price for Oxyra X
+                CoinPrice(
+                    coinUid = coinUid,
+                    currencyCode = currencyCode,
+                    value = BigDecimal("0.7"), // Hardcoded price: $0.7 per OXRX (client request)
+                    diff24h = BigDecimal("5.2"), // Mock 24h change: +5.2%
+                    diff1d = BigDecimal("5.2"), // Mock 1d change: +5.2%
+                    timestamp = System.currentTimeMillis()
+                )
+            }
+            coinUid.isCustomCoin -> null
+            else -> marketKit.coinPrice(coinUid, currencyCode)
         }
     }
 
+    fun coinPriceMap(coinUids: List<String>, currencyCode: String): Map<String, CoinPrice> {
+        val result = mutableMapOf<String, CoinPrice>()
+        
+        // Handle Oxyra separately
+        coinUids.forEach { coinUid ->
+            if (coinUid == "oxyrax") {
+                result[coinUid] = CoinPrice(
+                    coinUid = coinUid,
+                    currencyCode = currencyCode,
+                    value = BigDecimal("0.7"), // Hardcoded price: $0.7 per OXRX (client request)
+                    diff24h = BigDecimal("5.2"), // Mock 24h change: +5.2%
+                    diff1d = BigDecimal("5.2"), // Mock 1d change: +5.2%
+                    timestamp = System.currentTimeMillis()
+                )
+            }
+        }
+        
+        // Handle other coins (excluding custom coins)
+        val coinUidsNoCustom = coinUids.filterNot { it.isCustomCoin }
+        if (coinUidsNoCustom.isNotEmpty()) {
+            result.putAll(marketKit.coinPriceMap(coinUidsNoCustom, currencyCode))
+        }
+        
+        return result
+    }
+
     fun coinPriceObservable(tag: String, coinUid: String, currencyCode: String): Observable<CoinPrice> =
-        if (coinUid.isCustomCoin) Observable.never() else marketKit.coinPriceObservable(tag, coinUid, currencyCode)
+        when {
+            coinUid == "oxyrax" -> {
+                // Return static observable for Oxyra
+                Observable.just(CoinPrice(
+                    coinUid = coinUid,
+                    currencyCode = currencyCode,
+                    value = BigDecimal("0.7"), // Hardcoded price: $0.7 per OXRX (client request)
+                    diff24h = BigDecimal("5.2"), // Mock 24h change: +5.2%
+                    diff1d = BigDecimal("5.2"), // Mock 1d change: +5.2%
+                    timestamp = System.currentTimeMillis()
+                ))
+            }
+            coinUid.isCustomCoin -> Observable.never()
+            else -> marketKit.coinPriceObservable(tag, coinUid, currencyCode)
+        }
 
     fun coinPriceMapObservable(tag: String, coinUids: List<String>, currencyCode: String): Observable<Map<String, CoinPrice>> {
-        val coinUidsNoCustom = coinUids.removeCustomCoins()
-        return when {
-            coinUidsNoCustom.isEmpty() -> Observable.never()
-            else -> marketKit.coinPriceMapObservable(tag, coinUidsNoCustom, currencyCode)
+        val oxyraIncluded = coinUids.contains("oxyrax")
+        val coinUidsNoCustom = coinUids.filterNot { it.isCustomCoin }
+        
+        return if (coinUidsNoCustom.isEmpty()) {
+            if (oxyraIncluded) {
+                // Only Oxyra, return static observable
+                Observable.just(mapOf("oxyrax" to CoinPrice(
+                    coinUid = "oxyrax",
+                    currencyCode = currencyCode,
+                    value = BigDecimal("0.7"), // Hardcoded price: $0.7 per OXRX (client request)
+                    diff24h = BigDecimal("5.2"), // Mock 24h change: +5.2%
+                    diff1d = BigDecimal("5.2"), // Mock 1d change: +5.2%
+                    timestamp = System.currentTimeMillis()
+                )))
+            } else {
+                Observable.never()
+            }
+        } else {
+            // Mix of regular coins and possibly Oxyra
+            marketKit.coinPriceMapObservable(tag, coinUidsNoCustom, currencyCode)
+                .map { marketKitPrices ->
+                    val result = marketKitPrices.toMutableMap()
+                    if (oxyraIncluded) {
+                        result["oxyrax"] = CoinPrice(
+                            coinUid = "oxyrax",
+                            currencyCode = currencyCode,
+                            value = BigDecimal("0.7"), // Hardcoded price: $0.7 per OXRX (client request)
+                            diff24h = BigDecimal("5.2"), // Mock 24h change: +5.2%
+                            diff1d = BigDecimal("5.2"), // Mock 1d change: +5.2%
+                            timestamp = System.currentTimeMillis()
+                        )
+                    }
+                    result
+                }
         }
     }
 
@@ -352,6 +429,30 @@ class MarketKitWrapper(
 
     fun vault(address: String, currencyCode: String, periodType: HsTimePeriod): Single<Vault> {
         return requestWithAuthToken { marketKit.vaultSingle(address, currencyCode, periodType) }
+    }
+
+    // Custom token creation for unsupported blockchains
+    private fun createCustomToken(query: TokenQuery): io.horizontalsystems.marketkit.models.Token? {
+        return when {
+            query.blockchainType is BlockchainType.Unsupported && query.blockchainType.uid == "oxyra" -> {
+                // Create custom Oxyra token
+                io.horizontalsystems.marketkit.models.Token(
+                    coin = io.horizontalsystems.marketkit.models.Coin(
+                        uid = "oxyrax",
+                        name = "Oxyra X",
+                        code = "OXRX"
+                    ),
+                    blockchain = io.horizontalsystems.marketkit.models.Blockchain(
+                        type = query.blockchainType,
+                        name = "Oxyra X",
+                        eip3091url = null
+                    ),
+                    type = query.tokenType,
+                    decimals = 12
+                )
+            }
+            else -> null
+        }
     }
 
 }

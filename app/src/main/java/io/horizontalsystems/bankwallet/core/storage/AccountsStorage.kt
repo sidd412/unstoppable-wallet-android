@@ -27,6 +27,7 @@ class AccountsStorage(appDatabase: AppDatabase) : IAccountsStorage {
         private const val HD_EXTENDED_LEY = "hd_extended_key"
         private const val MONERO_WATCH_ACCOUNT = "monero_watch_account"
         private const val OXYRA_WATCH_ACCOUNT = "oxyra_watch_account"
+        private const val OXYRA_WATCH_ACCOUNT = "oxyra_watch_account"
     }
 
     override fun getActiveAccountId(level: Int): String? {
@@ -60,6 +61,7 @@ class AccountsStorage(appDatabase: AppDatabase) : IAccountsStorage {
                             BITCOIN_ADDRESS -> AccountType.BitcoinAddress.fromSerialized(record.key!!.value)
                             HD_EXTENDED_LEY -> AccountType.HdExtendedKey(record.key!!.value)
                             MONERO_WATCH_ACCOUNT -> AccountType.MoneroWatchAccount.fromSerialized(record.key!!.value)
+                            OXYRA_WATCH_ACCOUNT -> AccountType.OxyraWatchAccount.fromSerialized(record.key!!.value)
                             OXYRA_WATCH_ACCOUNT -> AccountType.OxyraWatchAccount.fromSerialized(record.key!!.value)
                             else -> null
                         }

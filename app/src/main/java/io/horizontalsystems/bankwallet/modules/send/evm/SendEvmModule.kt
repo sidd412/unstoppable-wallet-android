@@ -4,6 +4,7 @@ import android.os.Parcelable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import io.horizontalsystems.bankwallet.core.App
+import io.horizontalsystems.bankwallet.core.IAdapter
 import io.horizontalsystems.bankwallet.core.ISendEthereumAdapter
 import io.horizontalsystems.bankwallet.core.isNative
 import io.horizontalsystems.bankwallet.entities.Address
@@ -68,6 +69,9 @@ object SendEvmModule {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             return when (modelClass) {
                 SendEvmViewModel::class.java -> {
+                    // Force refresh the adapter to ensure balance data is up to date
+                    (adapter as IAdapter).refresh()
+                    
                     val amountValidator = AmountValidator()
                     val coinMaxAllowedDecimals = wallet.token.decimals
 

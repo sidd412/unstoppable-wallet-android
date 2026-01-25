@@ -20,6 +20,7 @@ object BackupLocalModule {
     private const val HD_EXTENDED_LEY = "hd_extended_key"
     private const val MONERO_WATCH_ACCOUNT = "monero_watch_account"
     private const val OXYRA_WATCH_ACCOUNT = "oxyra_watch_account"
+    private const val OXYRA_WATCH_ACCOUNT = "oxyra_watch_account"
 
     //Backup Json file data structure
 
@@ -82,6 +83,7 @@ object BackupLocalModule {
         is AccountType.HdExtendedKey -> HD_EXTENDED_LEY
         is AccountType.MoneroWatchAccount -> MONERO_WATCH_ACCOUNT
         is AccountType.OxyraWatchAccount -> OXYRA_WATCH_ACCOUNT
+        is AccountType.OxyraWatchAccount -> OXYRA_WATCH_ACCOUNT
     }
 
     @Throws(IllegalStateException::class)
@@ -107,6 +109,7 @@ object BackupLocalModule {
             BITCOIN_ADDRESS -> AccountType.BitcoinAddress.fromSerialized(String(data, Charsets.UTF_8))
             HD_EXTENDED_LEY -> AccountType.HdExtendedKey(Base58.encode(data))
             MONERO_WATCH_ACCOUNT -> AccountType.MoneroWatchAccount.fromSerialized(String(data, Charsets.UTF_8))
+            OXYRA_WATCH_ACCOUNT -> AccountType.OxyraWatchAccount.fromSerialized(String(data, Charsets.UTF_8))
             OXYRA_WATCH_ACCOUNT -> AccountType.OxyraWatchAccount.fromSerialized(String(data, Charsets.UTF_8))
             else -> throw IllegalStateException("Unknown account type")
         }

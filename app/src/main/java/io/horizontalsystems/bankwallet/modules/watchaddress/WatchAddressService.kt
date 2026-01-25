@@ -124,6 +124,11 @@ class WatchAddressService(
             restoreSettingsManager.save(restoreSettings, account, BlockchainType.Monero)
         }
 
+        if (accountType is AccountType.OxyraWatchAccount) {
+            val restoreSettings = RestoreSettings().apply { birthdayHeight = accountType.restoreHeight }
+            restoreSettingsManager.save(restoreSettings, account, BlockchainType.Unsupported("oxyra"))
+        }
+
         try {
             walletActivator.activateTokens(account, tokens)
         } catch (e: Exception) {

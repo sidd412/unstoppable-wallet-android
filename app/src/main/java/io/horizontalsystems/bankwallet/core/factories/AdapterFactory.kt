@@ -309,6 +309,14 @@ class AdapterFactory(
             BlockchainType.Stellar -> {
                 stellarKitManager.unlink(wallet.account)
             }
+            BlockchainType.Monero -> {
+                MoneroAdapter.clear(wallet.account.id)
+            }
+            is BlockchainType.Unsupported -> {
+                if (wallet.token.blockchainType.uid == "oxyra") {
+                    OxyraAdapter.clear(wallet.account.id)
+                }
+            }
             else -> Unit
         }
     }
@@ -336,6 +344,14 @@ class AdapterFactory(
             }
             BlockchainType.Stellar -> {
                 stellarKitManager.unlink(transactionSource.account)
+            }
+            BlockchainType.Monero -> {
+                MoneroAdapter.clear(transactionSource.account.id)
+            }
+            is BlockchainType.Unsupported -> {
+                if (transactionSource.blockchain.type.uid == "oxyra") {
+                    OxyraAdapter.clear(transactionSource.account.id)
+                }
             }
             else -> Unit
         }

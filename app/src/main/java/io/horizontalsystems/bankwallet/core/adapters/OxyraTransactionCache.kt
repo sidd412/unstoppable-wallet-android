@@ -111,3 +111,7 @@ data class CacheStats(
     val confirmedTransactions: Int,
     val lastSyncTime: Long
 )
+<<<<<<< HEAD
+=======
+
+>>>>>>> e2dcf40944c75f7bf6c82239c558e000755e3d0f
